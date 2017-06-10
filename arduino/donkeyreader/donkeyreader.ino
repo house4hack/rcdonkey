@@ -14,14 +14,42 @@
 #define THROTTLE_LED 16
 #define TURN_LED 17
 
-//int incoming[2];
+#define DEFAULT_ANGLE 1500
+#define DEFAULT_THROTTLE 1500
+#define DEFAULT_MODE 1000
+
+
+#define CONTROL_SIZE 4
+struct controlItem {
+    int angle;              // 2
+    int throttle;           // 2
+};
+
+union inputFromPC {
+   controlItem controlData;
+   byte pcLine[CONTROL_SIZE];
+};
+
+inputFromPC inputData;
+byte pcData[CONTROL_SIZE];
+
+#define EMPTY_DATA 1
+#define MARKER1_DATA 2
+#define MARKER2_DATA 3
+#define RECV_DATA 4
+#define NEW_DATA 5
+
+char receiveState = EMPTY_DATA;
+byte startMarker1 = 'A';
+byte startMarker2 = 'A';
+char recvIndex = 0;
+
 
 
 Servo myservo_throttle, myservo_turn, myservo_mode; 
 char throttle_passthru = 1;
 char turn_passthru = 1;
 
-int incoming[2];
 
 #include <RunningMedian.h>
 
@@ -30,7 +58,7 @@ RunningMedian turn_samples = RunningMedian(3);
  
 
 
-int pwm_value_throttle=1500, pwm_value_turn=1500, pwm_value_mode=1000;
+int pwm_value_throttle=DEFAULT_THROTTLE, pwm_value_turn=DEFAULT_ANGLE, pwm_value_mode=DEFAULT_MODE;
 void setup() {
   // put your setup code here, to run once:
   pinMode(THROTTLE, INPUT);
@@ -54,7 +82,7 @@ void setup() {
   myservo_turn.attach(TURN_SERVO);
   myservo_mode.attach(MODE_SERVO);
   
-  
+  Serial.setTimeout(1000);
   Serial.begin(115200);
 }
  
@@ -64,52 +92,81 @@ void display(){
   digitalWrite(TURN_LED,turn_passthru);  
 }
 
-unsigned char waitForKey(int timeout){
-  long start = millis();
-  while(!Serial.available()){
-     if(millis()-start>timeout){
-       return(0);
-     } 
-  }
-  unsigned char c= Serial.read();
-  Serial.println(c,DEC);
-  return(c);
+
+
+
+void readSerialData() {   
+    byte rb;
+   
+    if(receiveState == NEW_DATA){
+       return; 
+    }
+    
+    if(receiveState == EMPTY_DATA){
+       recvIndex = 0;
+       if(Serial.available()){
+          rb = Serial.read();
+          if(rb == startMarker1){
+             receiveState == MARKER1_DATA; 
+          }
+       } 
+    }
+
+    if(receiveState == MARKER1_DATA){
+       if(Serial.available()){
+          rb = Serial.read();
+          if(rb == startMarker2){
+             receiveState == RECV_DATA;
+ 
+          } else {
+             receiveState = EMPTY_DATA; 
+          }
+       } 
+    }
+
+    if(receiveState == RECV_DATA){
+       while(Serial.available()){
+          rb = Serial.read();
+          inputData.pcLine[recvIndex] = rb;
+          recvIndex++;
+          if(recvIndex == CONTROL_SIZE){
+             processSerialData();
+             receiveState = EMPTY_DATA;  
+          }
+       } 
+    }
+    
 }
 
-void readFromSerial(){
-    char found = 0;
-    if(Serial.available()){
-      char magic1= waitForKey(1000);
-      if(magic1=='A'){
-        char magic2 = waitForKey(1000);
-        if(magic2=='A'){
-           incoming[0] = waitForKey(1000);
-           incoming[1] = waitForKey(1000);
-           found = 1;         
-        }
-      }
-    }
-    if(found){  
-      if(!throttle_passthru){ 
-         pwm_value_throttle = ((float)incoming[0])/256.0*1000.0+1000.0;
- 
-      }   
-      if(!turn_passthru){
-         pwm_value_turn = ((float)incoming[1])/256.0*1000.0+1000.0;
-      } 
-    }      
-}
- 
+
+void processSerialData() {
+  if(receiveState == NEW_DATA){
+     for (byte n = 0; n < CONTROL_SIZE; n++) {
+       inputData.pcLine[n] = pcData[n];
+     }
+
+     pwm_value_throttle = inputData.controlData.throttle;
+     pwm_value_turn     = inputData.controlData.angle;
+     receiveState = EMPTY_DATA;
+  }   
+} 
  
 void readFromPWM(){
    if(throttle_passthru){
     pwm_value_throttle = pulseIn(THROTTLE, HIGH);
+    if(pwm_value_throttle < 500){
+       pwm_value_throttle = DEFAULT_THROTTLE;
+    }
     throttle_samples.add(pwm_value_throttle);
     pwm_value_throttle = throttle_samples.getMedian();   
   } 
 
   if(turn_passthru){  
     pwm_value_turn = pulseIn(TURN, HIGH);
+    if(pwm_value_turn < 500){
+       pwm_value_turn = DEFAULT_ANGLE;
+    }
+
     turn_samples.add(pwm_value_turn);  
     pwm_value_turn = turn_samples.getMedian();
      
@@ -120,8 +177,7 @@ void loop() {
   
  
   readFromPWM();
-
-  readFromSerial();
+  readSerialData();
 
   myservo_throttle.writeMicroseconds(pwm_value_throttle);
   myservo_turn.writeMicroseconds(pwm_value_turn); 
