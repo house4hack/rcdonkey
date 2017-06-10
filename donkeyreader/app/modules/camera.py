@@ -33,8 +33,8 @@ class Camera:
         camera.crop = (0.0, 0.0, 1.0, 1.0)
         self.camera = camera
         self.rawCapture = PiRGBArray(camera, size=(self.width, self.height))
-        self.rgb = bytearray(self.width * self.height * 3)
-        self.yuv = bytearray(self.width * self.height * 3 / 2)
+        self.rgb = bytearray(int(self.width * self.height * 3))
+        self.yuv = bytearray(int(self.width * self.height * 3 / 2))
         
         # wait for camera to warm up
         time.sleep(0.1)
