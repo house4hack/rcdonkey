@@ -17,6 +17,7 @@ def convertFromPWM(angle_pwm, throttle_pwm, conf):
     return(angle,throttle)
 
 def sendToArduino(ser,angle,throttle):
-    dataToSend = struct.pack('<hh', int(angle),int(throttle))
-    ser.write('AA'.encode())
+    dataToSend = struct.pack('<BBhh', ord('A'), ord('A'),int(angle),int(throttle))
+    #ser.write('AA'.encode())
     ser.write(dataToSend)
+

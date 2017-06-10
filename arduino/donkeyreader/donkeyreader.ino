@@ -122,7 +122,6 @@ void display(){
 
 
 void readSerialData() { 
-    Serial.print("State:");      
     byte rb;
    
     if(receiveState == NEW_DATA){
@@ -134,35 +133,47 @@ void readSerialData() {
        if(Serial.available()){
           rb = Serial.read();
           if(rb == startMarker1){
-             receiveState == MARKER1_DATA; 
+             receiveState = MARKER1_DATA; 
+             Serial.println("Marker1");
           }
        } 
     }
+    //Serial.println(receiveState, DEC);    
 
     if(receiveState == MARKER1_DATA){
        if(Serial.available()){
           rb = Serial.read();
           if(rb == startMarker2){
-             receiveState == RECV_DATA;
+             receiveState = RECV_DATA;
+             Serial.println("Marker2");
+
  
           } else {
              receiveState = EMPTY_DATA; 
+             Serial.println("Did not find marker2");
+             Serial.print("Found:");
+             Serial.println(rb,DEC);
+
           }
        } 
     }
 
     if(receiveState == RECV_DATA){
        while(Serial.available()){
+          Serial.println("Receiving:");
           rb = Serial.read();
+          Serial.println(rb,DEC);
           inputData.pcLine[recvIndex] = rb;
           recvIndex++;
+          Serial.print("RecvIndex:");
+          Serial.println(recvIndex, DEC);
           if(recvIndex == CONTROL_SIZE){
+             receiveState = NEW_DATA;
              processSerialData();
              receiveState = EMPTY_DATA;  
           }
        } 
     }
-  Serial.println(receiveState);    
 }
 
 
@@ -171,7 +182,7 @@ void processSerialData() {
      for (byte n = 0; n < CONTROL_SIZE; n++) {
        inputData.pcLine[n] = pcData[n];
      }
-
+     Serial.println("In process");
      pwm_value_throttle = inputData.controlData.throttle;
      pwm_value_turn     = inputData.controlData.angle;
      receiveState = EMPTY_DATA;
@@ -252,13 +263,13 @@ void loop() {
   myservo_mode.writeMicroseconds(pwm_value_mode);  
 
   
-  Serial.print(pwm_value_throttle);
+  /*Serial.print(pwm_value_throttle);
   Serial.print(",");
   Serial.print(pwm_value_turn);
   Serial.print(",");
   Serial.print(drive_mode);
   Serial.print(",");
-  Serial.println(record_mode);
+  Serial.println(record_mode);*/
   
  
   display(); 
