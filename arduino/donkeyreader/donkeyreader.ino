@@ -8,11 +8,11 @@
 #define TURN_SERVO 5
 #define MODE_SERVO 6
 
-#define THROTTLE_BUT 14
-#define TURN_BUT 15
+#define DRIVE_BUT 14
+#define RECORD_BUT 15
 
-#define THROTTLE_LED 16
-#define TURN_LED 17
+#define DRIVE_LED 16
+#define RECORD_LED 17
 
 #define DEFAULT_ANGLE 1500
 #define DEFAULT_THROTTLE 1500
@@ -45,10 +45,20 @@ byte startMarker2 = 'A';
 char recvIndex = 0;
 
 
+#define RECORD_ON 1
+#define RECORD_OFF 0
+#define DRIVE_MANUAL 0
+#define DRIVE_ANGLE 1
+#define DRIVE_AUTO 2
+
+int record_mode= RECORD_OFF;
+int drive_mode= DRIVE_MANUAL;
+long last_blink=0;
+char blink_on=0;
+
+char throttle_passthru=true, turn_passthru=true;
 
 Servo myservo_throttle, myservo_turn, myservo_mode; 
-char throttle_passthru = 1;
-char turn_passthru = 1;
 
 
 #include <RunningMedian.h>
@@ -69,13 +79,13 @@ void setup() {
   pinMode(TURN_SERVO, OUTPUT);
   pinMode(MODE_SERVO, OUTPUT);
   
-  pinMode(THROTTLE_BUT, INPUT);
-  digitalWrite(THROTTLE_BUT, HIGH);
-  pinMode(TURN_BUT, INPUT);
-  digitalWrite(TURN_BUT, HIGH);  
+  pinMode(RECORD_BUT, INPUT);
+  digitalWrite(RECORD_BUT, HIGH);
+  pinMode(DRIVE_BUT, INPUT);
+  digitalWrite(DRIVE_BUT, HIGH);  
   
-  pinMode(THROTTLE_LED, OUTPUT);
-  pinMode(TURN_LED, OUTPUT);
+  pinMode(RECORD_LED, OUTPUT);
+  pinMode(DRIVE_LED, OUTPUT);
   
 
   myservo_throttle.attach(THROTTLE_SERVO);
@@ -88,8 +98,24 @@ void setup() {
  
  
 void display(){
-  digitalWrite(THROTTLE_LED,throttle_passthru); 
-  digitalWrite(TURN_LED,turn_passthru);  
+  if(record_mode==RECORD_OFF){
+    digitalWrite(RECORD_LED, LOW);
+  } else if( record_mode == RECORD_ON){
+    digitalWrite(RECORD_LED, HIGH);
+  }
+  
+  if(drive_mode==DRIVE_MANUAL){
+    digitalWrite(DRIVE_LED,LOW);
+  } else if (drive_mode==DRIVE_ANGLE){
+    digitalWrite(DRIVE_LED, HIGH); 
+  } else if (drive_mode==DRIVE_AUTO){
+    if(millis() - last_blink>100){
+      blink_on = !blink_on;
+      last_blink = millis();
+    }
+    digitalWrite(DRIVE_LED, blink_on);
+  
+  }
 }
 
 
@@ -173,11 +199,52 @@ void readFromPWM(){
   } 
   pwm_value_mode = pulseIn(MODE, HIGH);
 } 
+
+void readButtons(){
+  if(!digitalRead(DRIVE_BUT)){
+     if(drive_mode == DRIVE_MANUAL){
+       drive_mode = DRIVE_ANGLE;
+       turn_passthru = false;
+       throttle_passthru = true;
+     } else if (drive_mode == DRIVE_ANGLE) {
+       drive_mode = DRIVE_AUTO;
+       turn_passthru = false;
+       throttle_passthru = false;
+
+     } else if (drive_mode = DRIVE_AUTO){
+       drive_mode = DRIVE_MANUAL;
+       turn_passthru = true;
+       throttle_passthru = true;
+     } else {
+       drive_mode = DRIVE_MANUAL;
+       turn_passthru = true;
+       throttle_passthru = true;
+     }
+     display();
+     delay(500);
+  }
+
+  if(!digitalRead(RECORD_BUT)){
+     if(record_mode == RECORD_OFF){
+        record_mode = RECORD_ON; 
+     } else if(record_mode== RECORD_ON){
+        record_mode = RECORD_OFF;
+     } else {
+        record_mode= RECORD_OFF;
+     }
+     display();
+     delay(500);
+  } 
+  
+}
+
+
 void loop() {
   
  
   readFromPWM();
   readSerialData();
+  readButtons();
 
   myservo_throttle.writeMicroseconds(pwm_value_throttle);
   myservo_turn.writeMicroseconds(pwm_value_turn); 
@@ -188,19 +255,11 @@ void loop() {
   Serial.print(",");
   Serial.print(pwm_value_turn);
   Serial.print(",");
-  Serial.println(pwm_value_mode); 
+  Serial.print(drive_mode);
+  Serial.print(",");
+  Serial.println(record_mode);
+  
  
-  if(!digitalRead(TURN_BUT)){
-     turn_passthru = !turn_passthru;
-     display();
-     delay(500);
-  }
-
-  if(!digitalRead(THROTTLE_BUT)){
-     throttle_passthru = !throttle_passthru;
-     display();
-     delay(500);
-  } 
   display(); 
   
 }
