@@ -6,10 +6,16 @@ import modules.camera as cam
 import cv2
 import struct
 import traceback
+import json
+import util
 
-pilot_loaded = False
+conf = json.load(open("config.json"))
 
-
+if conf['load_pilot']:
+    import donkey
+    from donkey.pilots import KerasCategorical
+    pilot = KerasCategorical(conf["model"])
+    pilot.load()
 
 
 camera = cam.Camera(True,width=160,height=120)
@@ -26,21 +32,8 @@ def create_img_filepath(directory, frame_count, angle, throttle, milliseconds):
                 '.jpg')
     return filepath
 
-def sendToArduino(ser,angle,throttle):
-  dataToSend = struct.pack('<hh', int(angle),int(throttle))
-  ser.write('AA'.encode())
-  ser.write(dataToSend)
 
 
-def convertToPWM(angle,throttle):
-    angle_pwm    = (angle+0.5)*1000 + 1000
-    throttle_pwm = throttle * 1000  + 1000
-    return(angle_pwm, throttle_pwm)
-
-def convertFromPWM(angle_pwm, throttle_pwm):
-    throttle = (float(throttle_pwm)-1000.0)/1000.0
-    angle = (float(angle_pwm) - 1000.0)/1000.0-0.5
-    return(angle,throttle)
 
 
 frame_no=0
@@ -52,32 +45,25 @@ while True:
         try:
             line = line.decode('utf-8')
             parts = line.strip().split(",")
-            #throttle = (float(parts[0])-1000.0)/1000.0
-            #angle = (float(parts[1]) - 1000.0)/1000.0-0.5
-            angle,throttle = convertFromPWM(parts[1],parts[0])
+            angle,throttle = util.convertFromPWM(parts[1],parts[0],conf)
             dorecord = parts[3]=="1"
             dodecide = parts[2]!="0"
             print("From Arduino:",throttle,angle,frame_no, dorecord,dodecide)
+
             if dorecord:
                 frame = camera.grabFrame()
-                filename = create_img_filepath("/home/pi/record",frame_no,angle, throttle, 0.0)
+                filename = create_img_filepath(conf["save_folder"],frame_no,angle, throttle, 0.0)
                 cv2.imwrite(filename, frame)
                 frame_no+=1
             if dodecide:
-                if not pilot_loaded:
-                    import donkey
-                    from donkey.pilots import KerasCategorical
-                    pilot = KerasCategorical("/home/pi/mydonkey/models/default.h5")
-                    pilot.load()
-                    pilot_loaded= True
                 frame = camera.grabFrame()
                 angle,throttle = pilot.decide(frame)
-                angle = max(-1, min(1,angle))
-                throttle = max(0, min(1,throttle))
+                #angle = max(-1, min(1,angle))
+                #throttle = max(0, min(1,throttle))
 
-                print("To Arduino: %.2f: angle=%.2f throttle=%.2f" % (time.time(), angle,throttle))
-                angle_pwm,throttle_pwm= convertToPWM(angle, throttle) 
-                sendToArduino(ser,angle_pwm,throttle_pwm)
+                angle_pwm,throttle_pwm= util.convertToPWM(angle, throttle,conf) 
+                print("To Arduino: %.2f: angle=%.2f throttle=%.2f angle_pwm=%d throttle_pwm=%d" % (time.time(), angle,throttle, angle_pwm, throttle_pwm))
+                util.sendToArduino(ser,angle_pwm,throttle_pwm)
             else:
                 time.sleep(0.1)
         except Exception as e:
