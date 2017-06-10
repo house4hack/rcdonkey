@@ -121,7 +121,8 @@ void display(){
 
 
 
-void readSerialData() {   
+void readSerialData() { 
+    Serial.print("State:");      
     byte rb;
    
     if(receiveState == NEW_DATA){
@@ -161,7 +162,7 @@ void readSerialData() {
           }
        } 
     }
-    
+  Serial.println(receiveState);    
 }
 
 
