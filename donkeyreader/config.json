@@ -1,11 +1,12 @@
 {
-	  "max_angle_pwm": 1700,
-	  "min_angle_pwm": 1300,
+	  "max_angle_pwm": 1200,
+    "mid_angle_pwm": 1500,
+	  "min_angle_pwm": 1800,
 	  "max_throttle_pwm": 1700,
 	  "min_throttle_pwm": 1500,
     "model": "/home/pi/mydonkey/models/default.h5",
     "load_pilot": false,
     "save_folder": "/home/pi/record/",
-    "port": "/dev/ttyUSB0"
+    "clear_folder": false
 }
 

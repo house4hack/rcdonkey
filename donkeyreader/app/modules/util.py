@@ -1,19 +1,20 @@
 import struct
 
 def convertToPWM(angle,throttle,conf):
-    angle_pwm    = (angle+0.5)*1000 + 1000
-    throttle_pwm = throttle * 1000  + 1000
+    angle = max(-0.5, angle)
+    angle = min(0.5, angle)
 
-    angle_pwm = max(conf['min_angle_pwm'], angle_pwm)
-    angle_pwm = min(conf['max_angle_pwm'], angle_pwm)
+    throttle = max(0, throttle)
+    throttle = min(1, throttle)
 
-    throttle_pwm = max(conf['min_throttle_pwm'], throttle_pwm)
-    throttle_pwm = min(conf['max_throttle_pwm'], throttle_pwm)
+    angle_pwm    = (angle)*(conf['max_angle_pwm'] - conf['min_angle_pwm']) +  conf['mid_angle_pwm']
+    throttle_pwm = throttle * (conf['max_throttle_pwm'] - conf['min_throttle_pwm'])  + conf['min_throttle_pwm']
+
     return(angle_pwm, throttle_pwm)
 
 def convertFromPWM(angle_pwm, throttle_pwm, conf):
-    throttle = (float(throttle_pwm)-1000.0)/1000.0
-    angle = (float(angle_pwm) - 1000.0)/1000.0-0.5
+    throttle = (float(throttle_pwm)-conf['min_throttle_pwm'])/float(conf['max_throttle_pwm'] - conf['min_throttle_pwm'])
+    angle = (float(angle_pwm) - conf['mid_angle_pwm'] )/float(conf['max_angle_pwm'] - conf['min_angle_pwm'])  
     return(angle,throttle)
 
 def sendToArduino(ser,angle,throttle):
