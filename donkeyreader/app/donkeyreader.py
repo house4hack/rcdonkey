@@ -44,6 +44,7 @@ def make_recording_folder(parent_folder):
 
 is_recording= False
 is_deciding=False
+last_model=""
 frame_no=0
 while True:
     with serial.Serial(port, 115200, timeout=1) as ser:
@@ -60,7 +61,8 @@ while True:
 
             if dorecord:
                 if not is_recording:
-                    util.mount()
+                    if not is_deciding:
+                        util.mount()
                     recording_folder = make_recording_folder(conf["save_folder"])
                     if not os.path.exists(recording_folder):
                         os.makedirs(recording_folder)
@@ -73,14 +75,23 @@ while True:
             else:
                 if is_recording:
                     is_recording = False                    
-                    util.umount()
+                    if not is_deciding:
+                        util.umount()
 
             if dodecide:
                 if not is_deciding:
-                    util.mount()
-                    pilot = KerasCategorical(conf["model"])
-                    pilot.load()
+                    if not is_recording:
+                        util.mount()
+                    # check if model on disk has changed
+                    l = glob.glob("%s/*.hdf5" % conf["model_folder"])
+                    if not last_model==l[0]:
+                        pilot = KerasCategorical(l[0])
+                        pilot.load()
+                        last_model = l[0]
+                    if not is_recording:
+                        util.umount()
                     is_deciding = True
+
                 frame = camera.grabFrame()
                 angle,throttle = pilot.decide(frame)
                 angle_pwm,throttle_pwm= util.convertToPWM(angle, throttle,conf) 
@@ -88,7 +99,6 @@ while True:
                 util.sendToArduino(ser,angle_pwm,throttle_pwm)
             else:
                 if is_deciding:
-                    util.umount()
                     is_deciding = False
                 time.sleep(0.1)
         except Exception as e:
