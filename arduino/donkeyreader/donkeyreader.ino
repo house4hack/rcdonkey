@@ -51,6 +51,9 @@ char recvIndex = 0;
 #define DRIVE_ANGLE 1
 #define DRIVE_AUTO 2
 
+//#define DEBUGPRINT Serial.print
+#define DEBUGPRINT donothing
+
 int record_mode= RECORD_OFF;
 int drive_mode= DRIVE_MANUAL;
 long last_blink=0;
@@ -134,7 +137,7 @@ void readSerialData() {
           rb = Serial.read();
           if(rb == startMarker1){
              receiveState = MARKER1_DATA; 
-             Serial.println("Marker1");
+             DEBUGPRINT("Marker1");
           }
        } 
     }
@@ -145,14 +148,14 @@ void readSerialData() {
           rb = Serial.read();
           if(rb == startMarker2){
              receiveState = RECV_DATA;
-             Serial.println("Marker2");
+             DEBUGPRINT("Marker2");
 
  
           } else {
              receiveState = EMPTY_DATA; 
-             Serial.println("Did not find marker2");
-             Serial.print("Found:");
-             Serial.println(rb,DEC);
+             DEBUGPRINT("Did not find marker2");
+             DEBUGPRINT("Found:");
+             DEBUGPRINT(rb,DEC);
 
           }
        } 
@@ -160,17 +163,18 @@ void readSerialData() {
 
     if(receiveState == RECV_DATA){
        while(Serial.available()){
-          Serial.println("Receiving:");
+          DEBUGPRINT("Receiving:");
           rb = Serial.read();
-          Serial.println(rb,DEC);
+          DEBUGPRINT(rb,DEC);
           inputData.pcLine[recvIndex] = rb;
           recvIndex++;
-          Serial.print("RecvIndex:");
-          Serial.println(recvIndex, DEC);
+          DEBUGPRINT("RecvIndex:");
+          DEBUGPRINT(recvIndex, DEC);
           if(recvIndex == CONTROL_SIZE){
              receiveState = NEW_DATA;
              processSerialData();
-             receiveState = EMPTY_DATA;  
+             receiveState = EMPTY_DATA; 
+             break; 
           }
        } 
     }
@@ -179,10 +183,10 @@ void readSerialData() {
 
 void processSerialData() {
   if(receiveState == NEW_DATA){
-     for (byte n = 0; n < CONTROL_SIZE; n++) {
+     /*for (byte n = 0; n < CONTROL_SIZE; n++) {
        inputData.pcLine[n] = pcData[n];
-     }
-     Serial.println("In process");
+     }*/
+     DEBUGPRINT("In process");
      pwm_value_throttle = inputData.controlData.throttle;
      pwm_value_turn     = inputData.controlData.angle;
      receiveState = EMPTY_DATA;
@@ -251,11 +255,14 @@ void readButtons(){
 }
 
 
+void donothing(String s){}
+void donothing(String s, int arg){}
+void donothing(byte b, int arg){}
+
 void loop() {
   
- 
+  readSerialData(); 
   readFromPWM();
-  readSerialData();
   readButtons();
 
   myservo_throttle.writeMicroseconds(pwm_value_throttle);
@@ -263,13 +270,13 @@ void loop() {
   myservo_mode.writeMicroseconds(pwm_value_mode);  
 
   
-  /*Serial.print(pwm_value_throttle);
+  Serial.print(pwm_value_throttle);
   Serial.print(",");
   Serial.print(pwm_value_turn);
   Serial.print(",");
   Serial.print(drive_mode);
   Serial.print(",");
-  Serial.println(record_mode);*/
+  Serial.println(record_mode);
   
  
   display(); 
