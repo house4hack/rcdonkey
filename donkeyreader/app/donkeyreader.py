@@ -15,9 +15,6 @@ conf = json.load(open("config.json"))
 if conf['load_pilot']:
     import donkey
     from donkey.pilots import KerasCategorical
-    pilot = KerasCategorical(conf["model"])
-    pilot.load()
-
 
 camera = cam.Camera(True,width=160,height=120)
 
@@ -81,6 +78,8 @@ while True:
             if dodecide:
                 if not is_deciding:
                     util.mount()
+                    pilot = KerasCategorical(conf["model"])
+                    pilot.load()
                     is_deciding = True
                 frame = camera.grabFrame()
                 angle,throttle = pilot.decide(frame)
