@@ -33,9 +33,18 @@ def create_img_filepath(directory, frame_count, angle, throttle, milliseconds):
     return filepath
 
 
+def make_recording_folder(parent_folder):
+    l = glob.glob("%s/record_*" % parent_folder)
+    l = l.sort()
+    if len(l)>0:
+        last_record = l[-1]
+        parts = last_record.split("_")
+        number = int(parts[1])+1
+    else:
+        number = 1
+    return("record_%05d" % number)
 
-
-
+is_recording= False
 frame_no=0
 while True:
     with serial.Serial(port, 115200, timeout=1) as ser:
@@ -51,10 +60,16 @@ while True:
             print("From Arduino:",throttle,angle,frame_no, dorecord,dodecide)
 
             if dorecord:
+                if not is_recording:
+                    recording_folder = make_recording_folder(conf["save_folder"])
+                    is_recording = True
                 frame = camera.grabFrame()
-                filename = create_img_filepath(conf["save_folder"],frame_no,angle, throttle, 0.0)
+                filename = create_img_filepath(recording_folder,frame_no,angle, throttle, 0.0)
                 cv2.imwrite(filename, frame)
                 frame_no+=1
+            else:
+                if is_recording:
+                    is_recording = False                    
             if dodecide:
                 frame = camera.grabFrame()
                 angle,throttle = pilot.decide(frame)
