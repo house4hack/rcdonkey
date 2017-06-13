@@ -213,7 +213,7 @@ void readFromPWM(){
     pwm_value_turn = turn_samples.getMedian();
      
   } 
-  pwm_value_mode = pulseIn(MODE, HIGH);
+  //pwm_value_mode = pulseIn(MODE, HIGH);
 } 
 
 void readButtons(){
