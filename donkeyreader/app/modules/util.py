@@ -1,4 +1,5 @@
 import struct
+import subprocess
 
 def convertToPWM(angle,throttle,conf):
     angle = max(-0.5, angle)
@@ -22,3 +23,16 @@ def sendToArduino(ser,angle,throttle):
     #ser.write('AA'.encode())
     ser.write(dataToSend)
 
+def mount():
+    '''mounts USB_AI_RC_Car_Stick'''
+    vpath = "/home/pi/record"
+    cmd = 'sudo mount /dev/sda1 ' + vpath
+    proc = subprocess.Popen(str(cmd), shell=True, stdout=subprocess.PIPE).stdout.read()
+    print(proc)
+
+def umount():
+    '''unmounts USB_AI_RC_Car_Stick'''
+    vpath = "/home/pi/record"
+    cmd = 'sudo umount ' + vpath
+    proc = subprocess.Popen(str(cmd), shell=True, stdout=subprocess.PIPE).stdout.read()
+    print(proc)
