@@ -46,6 +46,7 @@ def make_recording_folder(parent_folder):
     return("%s/record_%05d/" % (parent_folder, number))
 
 is_recording= False
+is_deciding=False
 frame_no=0
 while True:
     with serial.Serial(port, 115200, timeout=1) as ser:
@@ -76,16 +77,20 @@ while True:
                 if is_recording:
                     is_recording = False                    
                     util.umount()
+
             if dodecide:
+                if not is_deciding:
+                    util.mount()
+                    is_deciding = True
                 frame = camera.grabFrame()
                 angle,throttle = pilot.decide(frame)
-                #angle = max(-1, min(1,angle))
-                #throttle = max(0, min(1,throttle))
-
                 angle_pwm,throttle_pwm= util.convertToPWM(angle, throttle,conf) 
                 print("To Arduino: %.2f: angle=%.2f throttle=%.2f angle_pwm=%d throttle_pwm=%d" % (time.time(), angle,throttle, angle_pwm, throttle_pwm))
                 util.sendToArduino(ser,angle_pwm,throttle_pwm)
             else:
+                if is_deciding:
+                    util.umount()
+                    is_deciding = False
                 time.sleep(0.1)
         except Exception as e:
             print(e)
