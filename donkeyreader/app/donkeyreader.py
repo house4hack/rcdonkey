@@ -88,7 +88,7 @@ while True:
                     if len(l)>0:
                         model_file = l[0]
                         model_time = time.strftime('%m/%d/%Y', time.gmtime(os.path.getmtime(model_file)))
-                        if not last_model==model_file and last_model_time == model_time:
+                        if not last_model==model_file and not last_model_time == model_time:
                             pilot = KerasCategorical(model_file)
                             pilot.load()
                             last_model = model_file
