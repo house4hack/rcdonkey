@@ -45,6 +45,7 @@ def make_recording_folder(parent_folder):
 is_recording= False
 is_deciding=False
 last_model=""
+last_model_time=""
 frame_no=0
 while True:
     with serial.Serial(port, 115200, timeout=1) as ser:
@@ -84,13 +85,15 @@ while True:
                         util.mount()
                     # check if model on disk has changed
                     l = glob.glob("%s/*.hdf5" % conf["model_folder"])
-                    if not last_model==l[0]:
-                        pilot = KerasCategorical(l[0])
-                        pilot.load()
-                        last_model = l[0]
-                    if not is_recording:
-                        util.umount()
-                    is_deciding = True
+                    if len(l)>0:
+                        model_file = l[0]
+                        model_time = time.strftime('%m/%d/%Y', time.gmtime(os.path.getmtime(model_file)))
+                        if not last_model==model_file and last_model_time == model_time:
+                            pilot = KerasCategorical(model_file)
+                            pilot.load()
+                            last_model = model_file
+                            last_model_time = model_time
+                        is_deciding = True
 
                 frame = camera.grabFrame()
                 angle,throttle = pilot.decide(frame)
@@ -100,6 +103,9 @@ while True:
             else:
                 if is_deciding:
                     is_deciding = False
+                    if not is_recording:
+                        util.umount()
+
                 time.sleep(0.1)
         except Exception as e:
             print(e)
