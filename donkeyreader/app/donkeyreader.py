@@ -62,6 +62,7 @@ while True:
 
             if dorecord:
                 if not is_recording:
+                    util.mount()
                     recording_folder = make_recording_folder(conf["save_folder"])
                     if not os.path.exists(recording_folder):
                         os.makedirs(recording_folder)
@@ -74,6 +75,7 @@ while True:
             else:
                 if is_recording:
                     is_recording = False                    
+                    util.umount()
             if dodecide:
                 frame = camera.grabFrame()
                 angle,throttle = pilot.decide(frame)
