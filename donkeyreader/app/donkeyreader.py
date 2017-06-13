@@ -7,7 +7,8 @@ import cv2
 import struct
 import traceback
 import json
-import util
+import modules.util as util
+import os.path
 
 conf = json.load(open("config.json"))
 
@@ -35,14 +36,14 @@ def create_img_filepath(directory, frame_count, angle, throttle, milliseconds):
 
 def make_recording_folder(parent_folder):
     l = glob.glob("%s/record_*" % parent_folder)
-    l = l.sort()
+    l.sort()
     if len(l)>0:
         last_record = l[-1]
         parts = last_record.split("_")
         number = int(parts[1])+1
     else:
         number = 1
-    return("record_%05d" % number)
+    return("%s/record_%05d/" % (parent_folder, number))
 
 is_recording= False
 frame_no=0
@@ -62,9 +63,12 @@ while True:
             if dorecord:
                 if not is_recording:
                     recording_folder = make_recording_folder(conf["save_folder"])
+                    if not os.path.exists(recording_folder):
+                        os.makedirs(recording_folder)
                     is_recording = True
                 frame = camera.grabFrame()
                 filename = create_img_filepath(recording_folder,frame_no,angle, throttle, 0.0)
+                print(filename)
                 cv2.imwrite(filename, frame)
                 frame_no+=1
             else:
