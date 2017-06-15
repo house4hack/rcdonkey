@@ -85,7 +85,10 @@ while True:
                         util.mount()
                     # check if model on disk has changed
                     l = glob.glob("%s/*.hdf5" % conf["model_folder"])
-                    if len(l)>0:
+                    if len(l)==0:
+                        print("Could not find model file!")
+                        util.umount()
+                    elif len(l)>0:
                         model_file = l[0]
                         model_time = time.strftime('%m/%d/%Y', time.gmtime(os.path.getmtime(model_file)))
                         if not last_model==model_file and not last_model_time == model_time:
@@ -95,11 +98,12 @@ while True:
                             last_model_time = model_time
                         is_deciding = True
 
-                frame = camera.grabFrame()
-                angle,throttle = pilot.decide(frame)
-                angle_pwm,throttle_pwm= util.convertToPWM(angle, throttle,conf) 
-                print("To Arduino: %.2f: angle=%.2f throttle=%.2f angle_pwm=%d throttle_pwm=%d" % (time.time(), angle,throttle, angle_pwm, throttle_pwm))
-                util.sendToArduino(ser,angle_pwm,throttle_pwm)
+                if is_deciding:
+                    frame = camera.grabFrame()
+                    angle,throttle = pilot.decide(frame)
+                    angle_pwm,throttle_pwm= util.convertToPWM(angle, throttle,conf) 
+                    print("To Arduino: %.2f: angle=%.2f throttle=%.2f angle_pwm=%d throttle_pwm=%d" % (time.time(), angle,throttle, angle_pwm, throttle_pwm))
+                    util.sendToArduino(ser,angle_pwm,throttle_pwm)
             else:
                 if is_deciding:
                     is_deciding = False

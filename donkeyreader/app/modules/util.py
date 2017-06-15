@@ -1,5 +1,6 @@
 import struct
 import subprocess
+import os.path
 
 def convertToPWM(angle,throttle,conf):
     angle = max(-0.5, angle)
@@ -23,16 +24,29 @@ def sendToArduino(ser,angle,throttle):
     #ser.write('AA'.encode())
     ser.write(dataToSend)
 
+
+def ismounted():
+    '''checks if USB_AI_RC_Car_Stick is mounted'''
+    vpath = "/home/pi/record"
+    return(os.path.ismount(vpath))
+
+
 def mount():
     '''mounts USB_AI_RC_Car_Stick'''
     vpath = "/home/pi/record"
-    cmd = 'sudo mount /dev/sda1 ' + vpath
-    proc = subprocess.Popen(str(cmd), shell=True, stdout=subprocess.PIPE).stdout.read()
-    print(proc)
+    if not ismounted():
+        cmd = 'sudo mount /dev/sda1 ' + vpath
+        proc = subprocess.Popen(str(cmd), shell=True, stdout=subprocess.PIPE).stdout.read()
+        print(proc)
+    else:
+        print("Was already mounted, skipping")
 
 def umount():
     '''unmounts USB_AI_RC_Car_Stick'''
     vpath = "/home/pi/record"
-    cmd = 'sudo umount ' + vpath
-    proc = subprocess.Popen(str(cmd), shell=True, stdout=subprocess.PIPE).stdout.read()
-    print(proc)
+    if ismounted():
+        cmd = 'sudo umount ' + vpath
+        proc = subprocess.Popen(str(cmd), shell=True, stdout=subprocess.PIPE).stdout.read()
+        print(proc)
+    else:
+        print("Not mounted, skipping")
