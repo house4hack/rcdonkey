@@ -11,8 +11,8 @@ throttle= 0
 angle = 0
 direction = 1
 
-test_angle= False
-test_throttle= True
+test_angle= True
+test_throttle= False
 
 last_send = time.time()
 
@@ -39,5 +39,7 @@ while True:
 
         ser.readline()
         line = ser.readline()   # read a '\n' terminated line
-        #print("From Arduino:",line.decode())
+        decoded = util.decode_line(line,conf)
+        print("From Arduino: %s decoded: %s" % (line.decode(), ",".join([str(f) for f in decoded])))
+        
 

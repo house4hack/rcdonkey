@@ -7,8 +7,8 @@ from donkey.pilots import KerasCategorical
 
 
 def convertToPWM(angle,throttle,conf):
-    angle = max(-0.5, angle)
-    angle = min(0.5, angle)
+    angle = max(-1.0, angle)
+    angle = min(1.0, angle)
 
     throttle = max(0, throttle)
     throttle = min(1, throttle)
