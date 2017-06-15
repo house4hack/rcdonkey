@@ -5,7 +5,6 @@
 	  "max_throttle_pwm": 1700,
 	  "min_throttle_pwm": 1500,
     "model_folder": "/home/pi/record",
-    "load_pilot": true,
     "save_folder": "/home/pi/record/"
 }
 
