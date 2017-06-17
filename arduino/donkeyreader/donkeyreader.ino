@@ -2,11 +2,9 @@
 #include <Servo.h> 
 #define THROTTLE 7
 #define TURN 8
-#define MODE 9
 
 #define THROTTLE_SERVO 3
 #define TURN_SERVO 5
-#define MODE_SERVO 6
 
 #define DRIVE_BUT 14
 #define RECORD_BUT 15
@@ -16,7 +14,6 @@
 
 #define DEFAULT_ANGLE 1500
 #define DEFAULT_THROTTLE 1500
-#define DEFAULT_MODE 1000
 
 
 #define CONTROL_SIZE 4
@@ -51,17 +48,28 @@ char recvIndex = 0;
 #define DRIVE_ANGLE 1
 #define DRIVE_AUTO 2
 
+#define CAR_OFF 0
+#define CAR_ON 1
+#define CAR_IDLE 2
+#define CAR_STARTING 3
+#define IDLE_TIME 60000
+#define START_TIME 1000
+
 //#define DEBUGPRINT Serial.print
 #define DEBUGPRINT donothing
 
 int record_mode= RECORD_OFF;
 int drive_mode= DRIVE_MANUAL;
+int car_state= CAR_STARTING;
+int min_throttle = 1500;
+long idle_start_time=0;
+long starting_start_time = 0;
 long last_blink=0;
 char blink_on=0;
 
 char throttle_passthru=true, turn_passthru=true;
 
-Servo myservo_throttle, myservo_turn, myservo_mode; 
+Servo myservo_throttle, myservo_turn; 
 
 
 #include <RunningMedian.h>
@@ -71,16 +79,14 @@ RunningMedian turn_samples = RunningMedian(3);
  
 
 
-int pwm_value_throttle=DEFAULT_THROTTLE, pwm_value_turn=DEFAULT_ANGLE, pwm_value_mode=DEFAULT_MODE;
+int pwm_value_throttle=DEFAULT_THROTTLE, pwm_value_turn=DEFAULT_ANGLE;
 void setup() {
   // put your setup code here, to run once:
   pinMode(THROTTLE, INPUT);
   pinMode(TURN, INPUT);
-  pinMode(MODE, INPUT); 
  
   pinMode(THROTTLE_SERVO, OUTPUT);
   pinMode(TURN_SERVO, OUTPUT);
-  pinMode(MODE_SERVO, OUTPUT);
   
   pinMode(RECORD_BUT, INPUT);
   digitalWrite(RECORD_BUT, HIGH);
@@ -90,10 +96,6 @@ void setup() {
   pinMode(RECORD_LED, OUTPUT);
   pinMode(DRIVE_LED, OUTPUT);
   
-
-  myservo_throttle.attach(THROTTLE_SERVO);
-  myservo_turn.attach(TURN_SERVO);
-  myservo_mode.attach(MODE_SERVO);
   
   Serial.setTimeout(1000);
   Serial.begin(115200);
@@ -198,6 +200,25 @@ void readFromPWM(){
     pwm_value_throttle = pulseIn(THROTTLE, HIGH);
     if(pwm_value_throttle < 500){
        pwm_value_throttle = DEFAULT_THROTTLE;
+       car_state = CAR_STARTING;
+       starting_start_time = millis();
+    } else if (car_state == CAR_STARTING && (millis() - starting_start_time > START_TIME)){
+       min_throttle = pwm_value_throttle + 50;
+       myservo_throttle.attach(THROTTLE_SERVO);
+       myservo_turn.attach(TURN_SERVO);
+       car_state = CAR_ON;
+    } else if (pwm_value_throttle > min_throttle && car_state != CAR_ON) {
+       myservo_throttle.attach(THROTTLE_SERVO);
+       myservo_turn.attach(TURN_SERVO);
+       car_state = CAR_ON;
+    } else if (pwm_value_throttle < min_throttle  && car_state == CAR_ON) {
+       car_state = CAR_IDLE;
+       idle_start_time = millis(); 
+    } else if (pwm_value_throttle < min_throttle && car_state == CAR_IDLE && (millis() - idle_start_time > IDLE_TIME)) {
+       car_state = CAR_OFF;
+       myservo_throttle.detach();
+       myservo_turn.detach();
+        
     }
     throttle_samples.add(pwm_value_throttle);
     pwm_value_throttle = throttle_samples.getMedian();   
@@ -213,7 +234,7 @@ void readFromPWM(){
     pwm_value_turn = turn_samples.getMedian();
      
   } 
-  //pwm_value_mode = pulseIn(MODE, HIGH);
+
 } 
 
 void readButtons(){
@@ -267,7 +288,6 @@ void loop() {
 
   myservo_throttle.writeMicroseconds(pwm_value_throttle);
   myservo_turn.writeMicroseconds(pwm_value_turn); 
-  myservo_mode.writeMicroseconds(pwm_value_mode);  
 
   
   Serial.print(pwm_value_throttle);
