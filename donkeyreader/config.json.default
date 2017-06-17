@@ -4,7 +4,7 @@
 	  "min_angle_pwm": 1800,
 	  "max_throttle_pwm": 1700,
 	  "min_throttle_pwm": 1350,
-    "model_folder": "/home/pi/record",
+    "model_folder": "/home/pi/record/model",
     "save_folder": "/home/pi/record/"
 }
 
