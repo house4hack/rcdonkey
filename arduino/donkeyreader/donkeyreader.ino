@@ -196,8 +196,9 @@ void processSerialData() {
 } 
  
 void readFromPWM(){
-   if(throttle_passthru){
+   if(throttle_passthru ){
     pwm_value_throttle = pulseIn(THROTTLE, HIGH);
+    
     if(pwm_value_throttle < 500){
        pwm_value_throttle = DEFAULT_THROTTLE;
        car_state = CAR_STARTING;
@@ -223,6 +224,13 @@ void readFromPWM(){
     throttle_samples.add(pwm_value_throttle);
     pwm_value_throttle = throttle_samples.getMedian();   
   } 
+  
+  if(drive_mode == DRIVE_AUTO){
+     int throttle = pulseIn(THROTTLE, HIGH);
+     if(throttle < min_throttle){
+        pwm_value_throttle  = throttle;  // prevent car run aways!
+     }
+  }
 
   if(turn_passthru){  
     pwm_value_turn = pulseIn(TURN, HIGH);

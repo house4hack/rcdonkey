@@ -1,6 +1,6 @@
 import glob
 import serial
-import picamera
+
 import time
 import struct
 import traceback
@@ -14,6 +14,7 @@ import donkey.sensors
 
 conf = json.load(open("config.json"))
 
+import picamera
 camera = donkey.sensors.PiVideoStream()
 camera.start()
 
