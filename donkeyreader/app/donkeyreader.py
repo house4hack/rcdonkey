@@ -70,7 +70,7 @@ while True:
 
                 if is_deciding:
                     frame = camera.capture_arr()
-                    angle,throttle = pilot.decide(frame)
+                    angle,throttle = pilot.decide(frame/255.0)
                     angle_pwm,throttle_pwm= util.convertToPWM(angle, throttle,conf) 
                     print("To Arduino: %.2f: angle=%.2f throttle=%.2f angle_pwm=%d throttle_pwm=%d" % (time.time(), angle,throttle, angle_pwm, throttle_pwm))
                     util.sendToArduino(ser,angle_pwm,throttle_pwm)
