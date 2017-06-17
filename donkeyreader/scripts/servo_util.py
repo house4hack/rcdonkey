@@ -39,7 +39,7 @@ while True:
 
         ser.readline()
         line = ser.readline()   # read a '\n' terminated line
-        decoded = util.decode_line(line,conf)
-        print("From Arduino: %s decoded: %s" % (line.decode(), ",".join([str(f) for f in decoded])))
+        #decoded = util.decode_line(line,conf)
+        #print("From Arduino: %s decoded: %s" % (line.decode(), ",".join([str(f) for f in decoded])))
         
 
