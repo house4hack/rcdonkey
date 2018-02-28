@@ -8,14 +8,17 @@ import json
 import modules.util as util
 import os.path
 
-import donkey
-import donkey.utils
-import donkey.sensors
+import keras
+
+#import donkey
+#import donkey.utils
+#import donkey.sensors
 
 conf = json.load(open("config.json"))
 
 import picamera
-camera = donkey.sensors.PiVideoStream()
+import modules.camera as cam
+camera = cam.PiVideoStream()
 camera.start()
 
 l = glob.glob("/dev/ttyS0")
@@ -25,7 +28,7 @@ is_recording= False
 is_deciding=False
 last_model_name=""
 last_model_time=""
-pilot = None
+model = None
 frame_no=0
 while True:
     with serial.Serial(port, 115200, timeout=1) as ser:
@@ -48,7 +51,7 @@ while True:
                 frame = camera.capture_arr()
                 filename = util.create_img_filepath(recording_folder,frame_no,angle, throttle, 0.0)
                 print(filename)
-                img = donkey.utils.arr_to_img(frame)
+                img = util.arr_to_img(frame)
                 img.save(filename)
                 frame_no+=1
             else:
@@ -62,15 +65,15 @@ while True:
                 # load the pilot only if it has changed based on name and change date
                 if not is_deciding:
                     util.mount()
-                    last_model_name, last_model_time, pilot = util.check_and_load_pilot(conf["model_folder"], last_model_name, last_model_time, pilot)
-                    if pilot != None:
+                    last_model_name, last_model_time, model = util.check_and_load_model(conf["model_folder"], last_model_name, last_model_time, model)
+                    if model != None:
                         is_deciding = True
                     if not is_recording:
                         util.umount()
 
                 if is_deciding:
                     frame = camera.capture_arr()
-                    angle,throttle = pilot.decide(frame/255.0)
+                    angle,throttle = util.decide(model,frame/255.0)
                     angle_pwm,throttle_pwm= util.convertToPWM(angle, throttle,conf) 
                     print("To Arduino: %.2f: angle=%.2f throttle=%.2f angle_pwm=%d throttle_pwm=%d" % (time.time(), angle,throttle, angle_pwm, throttle_pwm))
                     util.sendToArduino(ser,angle_pwm,throttle_pwm)

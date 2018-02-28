@@ -3,8 +3,8 @@ import subprocess
 import os.path
 import glob
 import time
-from donkey.pilots import KerasCategorical
-
+import keras
+import numpy as np
 
 def convertToPWM(angle,throttle,conf):
     angle = max(-1.0, angle)
@@ -87,7 +87,7 @@ def decode_line(line,conf):
     dodecide = parts[2]!="0"
     return(angle,throttle,dorecord,dodecide)
 
-def check_and_load_pilot(model_folder, last_model_name, last_model_time, pilot=None):
+def check_and_load_model(model_folder, last_model_name, last_model_time, model=None):
     '''check if model has changed on disk and load pilot'''
     l = glob.glob("%s/*.hdf5" % model_folder)
     if len(l)==0:
@@ -97,9 +97,42 @@ def check_and_load_pilot(model_folder, last_model_name, last_model_time, pilot=N
         model_file = l[0]
         model_time = time.strftime('%m/%d/%Y', time.gmtime(os.path.getmtime(model_file)))
         if not last_model_name==model_file and not last_model_time == model_time:
-            pilot = KerasCategorical(model_file)
-            pilot.load()            
+            model = keras.models.load_model(model_file)
         last_model_name = model_file
         last_model_time = model_time
-    return(last_model_name, last_model_time, pilot)
+    return(last_model_name, last_model_time, model)
 
+def img_to_binary(img):
+    '''
+    accepts: PIL image
+    returns: binary stream (used to save to database)
+    '''
+    f = BytesIO()
+    img.save(f, format='jpeg')
+    return f.getvalue()
+
+def arr_to_img(arr):
+    '''
+    accepts: numpy array with shape (Hight, Width, Channels)
+    returns: binary stream (used to save to database)
+    '''
+    arr = np.uint8(arr)
+    img = Image.fromarray(arr)
+    return img
+
+def decide(model, img_arr):
+    img_arr = img_arr.reshape((1,) + img_arr.shape)
+    angle_binned, throttle = model.predict(img_arr)
+    angle_certainty = max(angle_binned[0])
+    angle_unbinned = unbin_Y(angle_binned)
+    return angle_unbinned[0], throttle[0][0]
+
+
+        
+def unbin_Y(Y):
+    d=[]
+    for y in Y:
+        v = np.argmax(y)
+        v = v *(2/14) - 1
+        d.append(v)
+    return np.array(d)
