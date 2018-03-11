@@ -6,6 +6,8 @@ import time
 import keras
 import numpy as np
 
+from PIL import Image
+
 def convertToPWM(angle,throttle,conf):
     angle = max(-1.0, angle)
     angle = min(1.0, angle)
