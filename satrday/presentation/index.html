@@ -1,0 +1,188 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>reveal.js</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/vodacom.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+
+			  <section data-background-image="images/picar.jpeg" data-background-size="contain" >
+			   <style type="text/css">
+			      .whiteheading { text-align: left; color: white; }
+			    </style>
+			    <h2><div class="whiteheading"><br><br>R is for Racing!</div></h2>
+					
+			  </section>
+
+
+			  <section>
+			    <h3>Who am I?</h3>
+			    <ul>
+			      <li>Schalk Heunis
+			      <li>Big Data at Vodacom in June 2017 
+						<li>House4Hack Founder in July 2011</li>
+						<li>Started using R in 2002</li>
+			  </section>
+
+			  <section>
+					
+					<section>
+							<h3>Inspired by Will Roscoe's Donkey</h3>
+							<img src="images/donkey-car-graphic_orig.jpg" height="400"/>
+							<p>https://github.com/wroscoe/donkey</p>
+					</section>
+					
+					<section>
+							<h3>RC Donkey &larr; Donkey -wifi -smartphone +RC</h3>
+							<img src="images/pisees.jpeg" height="400"/>
+							https://github.com/house4hack/rcdonkey</p>
+					</section>
+
+					<section>
+							<h3>Autonomous RC car - Theory</h3>
+							<ol>
+									<li>Record video + RC inputs</li>
+									<li>Train a convnet: photo &rarr; (angle,throttle)</li>
+									<li>Read video in real time, predict control, steer car</li>
+								</ol>
+					</section>
+
+					
+
+
+			  </section>
+
+			  <section>
+
+						<section>
+								<h3>1. Record video + RC inputs</h3>
+								<video autoplay height="240" loop controls>
+										<source data-src="images/carsees.mp4" type="video/mp4" />
+								</video>
+	
+								<br/>
+								<img src="images/picar_inside.jpeg" height="300"/>
+	
+								
+							</section> 
+	
+		
+							
+						<section>
+								<h3>2. Train in Keras for R</h3>
+								<img src="images/rkeras_code.png" height="500" onclick="window.open(this.src)"/>
+						</section>
+	
+						<section>
+								<h3>First try :(</h3>
+								<img src="images/rkeras_bad.png" height="400" onclick="window.open(this.src)"/>
+								<p>"In theory there is no difference between practice and theory, but in practice there is"</p>
+						</section> 
+						 
+					</section>
+
+
+					<section>
+							<section>
+								<h3>2&half;. Debug</h3>
+								<img src="images/angle_bad.png" height=500/>
+								
+							</section>
+
+							<section>
+									<h3>Bad driving</h3>
+									<img src="images/bad_driving.png" height=500/>
+							</section>	
+
+							<section>
+									<h3>After some practice...</h3>
+									<img src="images/angle.png" height=500/>
+							</section>	
+
+							<section>
+									<h3>Digging deeper</h3>
+									<img src="images/cnn-schema1.jpg" height=500>
+							</section> 
+							
+
+							<section>
+									<h3>PCA on Feature Layer</h3>
+									<img src="images/pca.png" height="500" onclick="window.open(this.src)"/>
+							</section> 
+
+							<section>
+								<h3>PCA on Feature Layer</h3>
+								<img src="images/pca_photos_blocks.png" height="500" onclick="window.open(this.src)"/>
+						</section> 
+
+							<section>
+								<h3>Structure learnt</h3>
+								<img src="images/pca_photos_blocks_arrows_photos.png" height="500" onclick="window.open(this.src)"/>
+							</section> 
+						</section>
+	
+											
+			  
+			  <section >
+					<section>
+						 <h3>Video of car driving</h3>
+						 
+								<video controls loop autoplay height="300">
+										<source data-src="images/result.mp4" type="video/mp4" />
+								</video>
+							
+								<div>Video by Philip (PiGuy.co.za)</div>
+					</section>
+					<section>
+						<h3>Presentation + Notebook + PC board + Arduino + Code </h3>
+						<p>https://github.com/house4hack/rcdonkey</p>
+					</section>
+			  </section>
+
+			  
+			  
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+			// More info about config & dependencies:
+			// - https://github.com/hakimel/reveal.js#configuration
+			// - https://github.com/hakimel/reveal.js#dependencies
+			Reveal.initialize({
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+			],
+			
+			transition: 'cube'
+
+			});
+		</script>
+	</body>
+</html>
+
+
